@@ -1,0 +1,69 @@
+from django.shortcuts import render
+from django.http import HttpResponse, HttpResponseNotFound,\
+HttpResponseNotAllowed, HttpResponseBadRequest, HttpResponseRedirect
+from models import Url
+
+from django.views.decorators.csrf import csrf_exempt
+
+
+
+def redirect(request,resource):
+
+    try:
+        url = Url.objects.get(id=resource)
+	return HttpResponseRedirect(url.longUrl)
+    except Url.DoesNotExist:
+        return HttpResponseNotFound(str(id) + " not found")
+    
+    
+
+@csrf_exempt
+def process(request):
+
+    if request.method == 'GET':
+        UrlAsked = Url.objects.all()
+	urls=""
+	for url in  UrlAsked:
+            urls += "<pre>Url acortada de: " + url.Url + "  -->  " + str(url.id)
+
+        formulario = "</br></br></br><form action='' method='POST'>Introduzca su Url a acortar: <input type=\
+                'text' name='url'><input type='submit' value='Enviar'></form>"
+
+        htmlBody = "<html><body>Lista de URLs acortadas: " \
+            + urls\
+            + formulario \
+            + "</body></html>"
+	return HttpResponse(htmlBody)
+    
+    elif request.method == 'POST':
+
+        url = request.POST.get("url")
+
+	if url == "":
+
+               return HttpResponseBadRequest("PAGINA VACIA")
+
+        elif not url.startswith("http://") and not url.startswith("https://"):
+            url = "http://" + url
+	    try:
+
+		 newUrl = Url.objects.get(longUrl=url)
+	    except Url.DoesNotExist:
+		 newUrl = Url(longUrl=url)
+		 newUrl.save()
+		 response = "<p>url acortada: <a href=" + str(newUrl.id) + ">" +\
+		            str(newUrl.id) + "</a></p>"
+		 response += "<a href=''>Pulse aqui para volver al acortador</a>"
+
+	    return HttpResponse(response)
+
+		
+           
+      
+    else:
+	HttpResponseNotAllowed("Solo Post y Get")
+
+
+
+
+
